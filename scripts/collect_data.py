@@ -66,12 +66,12 @@ def get_adjacent(reference, mode, focus_accounts):
 
     return adjacent_statuses
 
-def save_raw_and_processed(data, type):
+def save_raw_and_processed(data, type, time_stamp):
     # Save class instances as raw data, and pandas dataframes as processed data
 
     # Define file paths and names
-    file_path_r = f"../data/raw/{type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pkl"
-    file_path_p = f"../data/processed/{type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    file_path_r = f"../data/raw/{type}_{time_stamp}.pkl"
+    file_path_p = f"../data/processed/{type}_{time_stamp}.csv"
 
     # Save raw data
     print("SAVING RAW DATA...")
@@ -92,13 +92,14 @@ if __name__ == "__main__":
     app_token = check_app_token()
 
     # trending
+    time_stamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     trending_statuses = get_trending(app_token = app_token)
-    save_raw_and_processed(trending_statuses, "trending_statuses")
+    save_raw_and_processed(trending_statuses, "trending_statuses", time_stamp)
 
     # adjacent, run for each mode and focus, name accordingly
     for mode in ["previous", "subsequent"]:
         for focus in ["no", "yes"]:
-            type_name = f"{mode}_acc_focus_{focus}"
+            type_name = f"adjacent_statuses_{mode}_acc_focus_{focus}"
             adjacent_statuses = get_adjacent(reference = trending_statuses, mode = mode, focus_accounts = focus)
-            save_raw_and_processed(adjacent_statuses, "adjacent_statuses_" + type_name)
+            save_raw_and_processed(adjacent_statuses, type_name, time_stamp)
 
