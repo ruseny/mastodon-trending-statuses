@@ -18,6 +18,12 @@ with DAG(
     description = "A DAG to ELT trending statuses and their adjacent statuses from mastodon",
     start_date = datetime(2025, 3, 1), 
     schedule = "0 3,9,15,21 * * 6,0,1", # to capture the weekend trends
+    catchup = False, # backfilling doesn't make sense for this DAG, since API responses will always be current
+    default_args = {
+        "depends_on_past": False,
+        "retries": 1,
+        "retry_delay": timedelta(minutes=5)
+    }
 ) as dag:
     
     extract_and_load = BashOperator(
