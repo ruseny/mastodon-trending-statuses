@@ -21,7 +21,7 @@ The following files under directory 'scripts' perform the data collection:
 - get_app_token.py: for initial app creation, ideally run only once
 - collect_data.py: to fetch trending statuses at the time of running the script, as well as their adjacent statuses, and to save these as both raw (class instances as pkl files) and processed (pandas dataframes) data files
 - clean_data.py: to get all files under directory 'data/processed' (created by the above script), conduct cleaning operations, and save as pandas dataframes
-- crontab.txt: sample cron job for a linux operating system, only applicable in the original local environment, to run the script over a weekend from Saturday to Monday four times a day, and save the terminal output in a log file
+- the files under the folder 'elt' are created to run the above scripts on a schedule to capture weekend trends. The 'crontab.txt' file contains a line that can be added to the cron jobs. The 'mastodon_dag.py' file can be placed among the DAGs of an active Apache Airflow installation.
 
 ## Building a model
 
