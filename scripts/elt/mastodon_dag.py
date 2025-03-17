@@ -11,7 +11,7 @@ from airflow.operators.bash import BashOperator
 # local directory where the scripts will be run
 SCRIPTS_DIR = "/home/rusen/github-repos/mastodon-trending-statuses/scripts/"
 # conda environment name to activate
-CONDA_ENV = "mastodon-trending-statuses"
+CONDA_ENV = "mastodon"
 
 with DAG(
     "mastodon_trending_statuses",
