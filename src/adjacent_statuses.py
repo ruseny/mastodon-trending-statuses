@@ -9,10 +9,11 @@ import requests
 from datetime import datetime, timezone
 from time import sleep
 import pandas as pd
+from src.mastodon_statuses import MastodonStatuses
 from src.trending_statuses import TrendingStatuses
 
 # Class definition
-class AdjacentStatuses:
+class AdjacentStatuses(MastodonStatuses):
     """
     This class is designed to fetch statuses that are related to a set of 
     trending statuses as stored in a TrendingStatuses object. The related 
@@ -27,7 +28,8 @@ class AdjacentStatuses:
     related statuses. The method generate_df() exports a pandas dataframe
     of the existing data. 
     """
-    def __init__(self, reference: TrendingStatuses = None, token = None) -> None:
+    def __init__(self, reference: TrendingStatuses, token = None) -> None:
+        super().__init__(server = reference.server, token = token)
         self.data = {}
         self.reference = reference
         # initialise lists for status and account ids
@@ -86,31 +88,8 @@ class AdjacentStatuses:
         The value should be a float, the default is 10.
         """
 
-        # First, check the arguments and specify the components of the
-        # URL where requests will be sent. Meanwhile, if the values
-        # don't conform to requirements, raise an error.
-
-        if type(status_limit) == int:
-            param1 = "?limit=" + str(status_limit)
-        else:
-            raise ValueError("status_limit should be an integer")
-        
-        if mode == "subsequent":
-            param2 = "&min_id="
-        elif mode == "previous":
-            param2 = "&max_id="
-        else: 
-            raise ValueError("mode should be either 'subsequent' or 'previous'")
-        
-        if focus_accounts == "no":
-            base_url = f"https://{self.reference.server}/api/v1/timelines/public"
-        elif focus_accounts == "yes":
-            base_url = f"https://{self.reference.server}/api/v1/accounts/"
-        else: 
-            raise ValueError("focus_accounts should be either 'no' or 'yes'")
-
-        # Check if the lists of remaining reference ids are empty.
-        # If so, raise an exception.
+        # Firts, check if there are ids for which to fetch data.
+        # If no, raise an exception.
 
         if len(self.ref_ids_rem) == 0:
             raise Exception("No remaining statuses in the reference data")
@@ -125,32 +104,15 @@ class AdjacentStatuses:
             s_id = self.ref_ids_rem.pop(0)
             a_id = self.ref_accounts_rem.pop(0)
 
-            # initiate a variable for response
-            resp = None
-
             # send request based on if we focus on accounts, get response
-            # add an authorisation token if exists
-
-            if self.token is not None:
-                if focus_accounts == "yes":
-                    resp = requests.get(
-                        base_url + a_id + "/statuses" + param1 + param2 + s_id,
-                        headers = {"Authorization" : f"Bearer {self.token}"}
-                        )
-                else: 
-                    resp = requests.get(
-                        base_url + param1 + param2 + s_id,
-                        headers = {"Authorization" : f"Bearer {self.token}"}
-                        )
+            if focus_accounts == "yes":
+                self.req_account_statuses(account_id = a_id, n_statuses = status_limit, mode = mode, min_max_id = s_id)
             else:
-                if focus_accounts == "yes":
-                    resp = requests.get(base_url + a_id + "/statuses" + param1 + param2 + s_id)
-                else: 
-                    resp = requests.get(base_url + param1 + param2 + s_id)
+                self.req_timeline(n_statuses = status_limit, mode = mode, min_max_id = s_id)
             
             # if the response is OK, save data and proceed, otherwise skip this item
-            if resp.status_code == 200:
-                self.data[s_id] = resp.json()
+            if self.response.status_code == 200:
+                self.data[s_id] = self.response.json()
                 counter += 1
             else:
                 print(f"Response code not 200: request failed for status with id {s_id}.\n", 
@@ -158,7 +120,7 @@ class AdjacentStatuses:
                 continue
             
             # check remaining rate limit: if too low, apply selected procedure
-            rem_rate_limit = int(resp.headers["x-ratelimit-remaining"])
+            rem_rate_limit = int(self.response.headers["x-ratelimit-remaining"])
             if rem_rate_limit <= rate_limit_threshold:
                 print(f"Remaining rate limit is critically low: {rem_rate_limit}.", 
                       f"\n So far completed {counter} requests.")
@@ -167,7 +129,7 @@ class AdjacentStatuses:
                     
                     # next reset time as provided in the response headers
                     next_reset = datetime.strptime(
-                        resp.headers['x-ratelimit-reset'], 
+                        self.response.headers['x-ratelimit-reset'], 
                         "%Y-%m-%dT%H:%M:%S.%fZ"
                     ).replace(tzinfo = timezone.utc)
                     print("The provided reset time (UTC):", next_reset.strftime("%H:%M:%S"))
@@ -196,6 +158,8 @@ class AdjacentStatuses:
                 else:
                     print("Ending the process.")
                     break
+        
+        self.response = None
 
     def generate_df(self, drop_trending: bool = True):
         """

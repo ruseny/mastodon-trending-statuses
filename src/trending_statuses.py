@@ -6,35 +6,37 @@ This module defines a class to collect data on trending statuses.
 import requests
 from datetime import datetime, timedelta
 import pandas as pd
+from src.mastodon_statuses import MastodonStatuses
 
 # A class with methods to get data
-class TrendingStatuses:
+class TrendingStatuses(MastodonStatuses):
     """
     This class can get and store data from trending mastodon statuses.
     - The argument 'server' specifies the Mastodon instance to send the
     requests. This should be a string that will resolve into a valid URL.
-    The default is 'mastodon.social'.
+    If this is not specified, it defaults to 'mastodon.social'.
     - With the argument 'token', one can optionally pass an authorisation
     token. This is normally not required to fetch trending statuses.
     The class is initialised with the main attribute 'data', which stores
     the trending status data as provided by mastodon API when the method
     get_data() is called. This is a dictionary where the keys are batch 
     numbers, and the values are list of statuses fetched in this batch.
+    There is also a data_single_lang attribute, which stores the data in
+    the same way, if the method reduce_single_lang() is called without
+    overwriting the main data.
     After fetching data, these can be turned into a pandas dataframe with 
-    the method generate_df().
+    the method generate_df(). 
+    The class also inherits some basic properties and methods from the 
+    MastodonStatuses class.
     """
-    def __init__(self, server: str = "mastodon.social", token = None) -> None:
+    def __init__(self, server: str = None, token : str = None) -> None:
+        super().__init__(server = server, token = token)
         
         self.data = {}
         self.data_single_lang = None
-
-        self.server = server
-        self.req_url = f"https://{self.server}/api/v1/trends/statuses"
-        
-        self.token = token
         
     def get_data(self, verbose: bool = True,
-                 last_n_hours: float = 48, n_per_batch: int = 40, offset: int = 0):
+                 last_n_hours: float = 48, n_per_batch: int = 40, offset: int = 0) -> None:
         """
         This method sends requests to mastodon.social API to fetch trending statuses.
         Since there is a limit on the maximum number of statuses per request, data are
@@ -58,28 +60,16 @@ class TrendingStatuses:
         time_reached = datetime.now()
         statuses_after = time_reached - timedelta(hours = last_n_hours)
         batch_n = len(self.data) + 1 # if the class instance already has data, this is not overwritten
-        param_max_status = f"?limit={n_per_batch}"
 
         # check if any status earlier than the specified timeframe has been fetched
         # time reached is updated within the loop
         while time_reached > statuses_after:
             # parameter for offset to pass to the URL. The offset is updated in the loop.
-            param_offset = f"&offset={offset}"
 
-            if self.token is not None:
-                resp = requests.get(
-                    self.req_url + param_max_status + param_offset, 
-                    headers = {
-                        "Authorization" : f"Bearer {self.token}"
-                        }
-                )
-            else: 
-                resp = requests.get(
-                    self.req_url + param_max_status + param_offset, 
-                )
+            self.req_trending(n_statuses = n_per_batch, offset = offset)
 
-            if resp.status_code == 200:
-                batch_data = resp.json()
+            if self.response.status_code == 200:
+                batch_data = self.response.json()
                 
                 # check if the requested number of statuses is in the batch
                 if len(batch_data) == n_per_batch:
@@ -109,8 +99,11 @@ class TrendingStatuses:
             else:
                 print("Response status not 200. Request failed.")
                 break
+        
+        self.response = None
+        self.last_req_type = None
     
-    def reduce_single_lang(self, language: str = "en", overwrite: bool = False):
+    def reduce_single_lang(self, language: str = "en", overwrite: bool = False) -> None:
         """
         This method takes the statuses data collected by
         the get_data method, filters for a single language, 
@@ -130,7 +123,7 @@ class TrendingStatuses:
         else:
             self.data_single_lang = data_lang
     
-    def generate_df(self, single_language: bool = False):
+    def generate_df(self, single_language: bool = False) -> pd.DataFrame:
         """
         This method takes the statuses data collected by
         the get_data method and returns a pandas dataframe. 
