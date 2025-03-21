@@ -35,8 +35,8 @@ class TrendingStatuses(MastodonStatuses):
         self.data = {}
         self.data_single_lang = None
         
-    def get_data(self, verbose: bool = True,
-                 last_n_hours: float = 48, n_per_batch: int = 40, offset: int = 0) -> None:
+    def get_data(self, verbose: bool = True, max_batches: int = 25, n_per_batch: int = 40,
+                 last_n_hours: float = 48, offset: int = 0) -> None:
         """
         This method sends requests to mastodon.social API to fetch trending statuses.
         Since there is a limit on the maximum number of statuses per request, data are
@@ -60,10 +60,12 @@ class TrendingStatuses(MastodonStatuses):
         time_reached = datetime.now()
         statuses_after = time_reached - timedelta(hours = last_n_hours)
         batch_n = len(self.data) + 1 # if the class instance already has data, this is not overwritten
+        req_counter = 0 # to control for max batches
 
-        # check if any status earlier than the specified timeframe has been fetched
+        # check if the max number of batches has been reached and
+        # if any status earlier than the specified timeframe has been fetched
         # time reached is updated within the loop
-        while time_reached > statuses_after:
+        while (req_counter < max_batches) and (time_reached > statuses_after):
             # parameter for offset to pass to the URL. The offset is updated in the loop.
 
             self.req_trending(n_statuses = n_per_batch, offset = offset)
@@ -81,6 +83,7 @@ class TrendingStatuses(MastodonStatuses):
                     # increment values for the next iteration
                     batch_n += 1
                     offset += n_per_batch
+                    req_counter += 1
 
                     # find the earliest datetime of statuses and update time_reached
                     dts = []
@@ -98,6 +101,14 @@ class TrendingStatuses(MastodonStatuses):
             
             else:
                 print("Response status not 200. Request failed.")
+                break
+            
+            # if explanation needs to be printed, check loop conditions here, and break if necessary
+            if verbose and (req_counter >= max_batches):
+                print(f"Maximum number of batches {(max_batches)} reached. Stopping requests")
+                break
+            if verbose and (time_reached <= statuses_after):
+                print(f"Statuses fetched are older than {last_n_hours} hours. Stopping requests.")
                 break
         
         self.response = None
