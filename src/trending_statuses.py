@@ -107,7 +107,7 @@ class TrendingStatuses(MastodonStatuses):
             
             # if explanation needs to be printed, check loop conditions here, and break if necessary
             if verbose and (req_counter >= max_batches):
-                print(f"Maximum number of batches {(max_batches)} reached. Stopping requests")
+                print(f"Maximum number of batches ({max_batches}) reached. Stopping requests")
                 break
             if verbose and (time_reached <= statuses_after):
                 print(f"Statuses fetched are older than {last_n_hours} hours. Stopping requests.")
