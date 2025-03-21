@@ -15,15 +15,15 @@ from src.adjacent_statuses import AdjacentStatuses
 
 def prep_dirs():
     # Create necessary directories, if don't not exist
+    if not os.path.exists("../data"):
+        print("Creating directory '../data'")
+        os.mkdir("../data")
     if not os.path.exists("../data/raw"):
         print("Creating directory '../data/raw'")
         os.mkdir("../data/raw")
     if not os.path.exists("../data/processed"):
         print("Creating directory '../data/processed'")
         os.mkdir("../data/processed")
-    if not os.path.exists("../data/cleaned"):
-        print("Creating directory '../data/cleaned'")
-        os.mkdir("../data/cleaned")
 
 def check_app_token():
     # If an authorisation token is stored, as defined in
