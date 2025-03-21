@@ -42,6 +42,8 @@ class TrendingStatuses(MastodonStatuses):
         Since there is a limit on the maximum number of statuses per request, data are
         fetched in batches, using the API's pagination.
         Args:
+        - max_batches (int): the maximum number of batches that will be fetched, i.e.
+        the maximum number of requests that will be sent. The default is 25.
         - last_n_hours (float): the number of hours prior to the curent datetime, 
         which will stop the request if an earlier status is fetched. Statuses don't
         arrive in reverse chronological order, so this doesn't necessarily get all 
