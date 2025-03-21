@@ -48,8 +48,6 @@ def get_trending(app_token = None):
     # Get data
     print("WORKING ON TRENDING STATUS DATA...")
     trending_statuses.get_data()
-    # Narrow down to English language posts
-    trending_statuses.reduce_single_lang(overwrite = True)
     print("...DATA FETCHED.")
 
     return trending_statuses
