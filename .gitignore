@@ -22,7 +22,8 @@ models/
 
 
 ### logs ###
-logs.log
+logs/
+*.log
 
 ### Linux ###
 *~
