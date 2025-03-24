@@ -41,7 +41,7 @@ def main():
                 print("All files in the directory ../data/processed had been transformed already.")
                 return
             else:
-                print(f"Cleaning {len(list_files)} files.")
+                print(f"{len(list_files)} of the files in the directory ../data/processed will be transformed and merged.")
         else:
             print("The directory ../data/cleaned is empty. All files in the directory ../data/processed will be transformed.")
     # if the cleaned directory does not exist, create it
