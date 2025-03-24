@@ -40,14 +40,14 @@ def check_app_token():
               "\nProceeding without token.")
         return None
 
-def get_trending(app_token = None):
+def get_trending(app_token = None, max_batches = 25, n_per_batch = 40):
     
     # Get trending status data as class instance
     trending_statuses = TrendingStatuses(token = app_token)
 
     # Get data
     print("WORKING ON TRENDING STATUS DATA...")
-    trending_statuses.get_data()
+    trending_statuses.get_data(max_batches = max_batches, n_per_batch = n_per_batch)
     print("...DATA FETCHED.")
 
     return trending_statuses
